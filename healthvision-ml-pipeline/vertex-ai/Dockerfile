@@ -3,7 +3,7 @@ FROM openjdk:11-jdk-slim
 WORKDIR /app
 
 # Copy built JAR and dependencies
-COPY target/ml-pipeline-1.0.jar .
+COPY target/COPY target/ml-pipeline-1.0-SNAPSHOT.jar .
 COPY datasets/iris.csv ./datasets/
 
 # Install GCloud SDK for Vertex AI integration
