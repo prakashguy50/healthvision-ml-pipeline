@@ -1,27 +1,60 @@
+# File: Makefile
+SHELL := /bin/bash
+GCP_PROJECT := $(shell gcloud config get-value project)
+GCP_REGION := us-central1
+TIMESTAMP := $(shell date +%Y%m%d-%H%M%S)
+
 # Deployment Control
-deploy: validate
-	@echo "Starting deployment..."
-	@chmod +x scripts/deploy.sh && ./scripts/deploy.sh
+deploy: validate check-gcloud-auth
+	@echo "🚀 Starting deployment to $(GCP_PROJECT)..."
+	@chmod +x scripts/deploy.sh
+	@./scripts/deploy.sh $(GCP_PROJECT) $(GCP_REGION) $(TIMESTAMP)
+	@echo "✅ Deployment completed successfully"
 
 # CI/CD Trigger
-trigger-workflow:
-	@echo "Triggering GitHub Actions workflow..."
-	@gh workflow run deploy-model.yml --ref $(shell git branch --show-current)
+trigger-workflow: check-gh-auth
+	@echo "⏳ Triggering GitHub Actions workflow..."
+	@gh workflow run deploy-model.yml \
+		--ref $(shell git branch --show-current) \
+		-f timestamp=$(TIMESTAMP)
+	@echo "✅ Workflow triggered. Monitor with: make status"
 
 # Validation
 validate:
-	@echo "Validating configuration..."
-	@test -f .github/workflows/deploy-model.yml || (echo "Error: Missing deploy-model.yml"; exit 1)
-	@test -f scripts/deploy.sh || (echo "Error: Missing deploy.sh"; exit 1)
-	@test -n "$(shell gcloud config get-value project)" || (echo "Error: GCP project not configured"; exit 1)
+	@echo "🔍 Validating configuration..."
+	@test -f .github/workflows/deploy-model.yml || (echo "❌ Error: Missing deploy-model.yml"; exit 1)
+	@test -f scripts/deploy.sh || (echo "❌ Error: Missing deploy.sh"; exit 1)
+	@test -d .git || (echo "❌ Error: Not a git repository"; exit 1)
 
-# Utility
+# Authentication Checks
+check-gcloud-auth:
+	@echo "🔐 Checking GCP authentication..."
+	@test -n "$(GCP_PROJECT)" || (echo "❌ Error: Run 'gcloud auth login' first"; exit 1)
+
+check-gh-auth:
+	@echo "🔐 Checking GitHub authentication..."
+	@gh auth status >/dev/null 2>&1 || (echo "❌ Error: Run 'gh auth login' first"; exit 1)
+
+# Monitoring
 status:
-	@echo "Current deployments:"
-	@gcloud ai endpoints list --region=us-central1 --format="table(name,displayName,createTime)"
+	@echo "📊 Current deployments in $(GCP_REGION):"
+	@gcloud ai endpoints list \
+		--region=$(GCP_REGION) \
+		--format="table(name, displayName, createTime)" \
+		|| echo "ℹ️  No endpoints found"
 
+# Maintenance
 clean:
-	@echo "Cleaning temporary files..."
-	@rm -f *.log
+	@echo "🧹 Cleaning temporary files..."
+	@rm -fv *.log deploy/*.tmp
 
-.PHONY: deploy trigger-workflow validate status clean
+# Help
+help:
+	@echo "Available targets:"
+	@echo "  deploy          - Deploy to Vertex AI"
+	@echo "  trigger-workflow - Trigger GitHub Actions"
+	@echo "  status          - List deployed models"
+	@echo "  clean           - Remove temporary files"
+	@echo "  help            - Show this help"
+
+.PHONY: deploy trigger-workflow validate check-gcloud-auth check-gh-auth status clean help
