@@ -15,6 +15,8 @@ FROM eclipse-temurin:11-jre-jammy
 WORKDIR /app
 COPY --from=builder /build/target/ml-pipeline-*.jar ./app.jar
 COPY --from=builder /build/datasets/iris.csv .
+# Ensure proper dataset path:
+COPY --from=builder /build/datasets/iris.csv /app/iris.csv
 
 # Minimal GCloud CLI (static install)
 RUN apt-get update && \
@@ -25,4 +27,4 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-cp", "app.jar", "com.healthvision.ml.Trainer"]
