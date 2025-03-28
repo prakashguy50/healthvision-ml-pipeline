@@ -1,21 +1,25 @@
 # ==================== BUILD STAGE ====================
-FROM openjdk:11-jdk-slim AS builder
+FROM maven:3.8.6-jdk-11 AS builder
 
 WORKDIR /build
-COPY . .
-RUN mvn clean package
+COPY pom.xml .
+# Download dependencies first (cached unless pom.xml changes)
+RUN mvn dependency:go-offline
+
+COPY src ./src
+COPY datasets ./datasets
+# Build the application
+RUN mvn clean package -DskipTests
 
 # ==================== RUNTIME STAGE ====================
 FROM openjdk:11-jre-slim
 
-# Set working directory
 WORKDIR /app
-
-# Copy built artifacts from builder stage
+# Copy built JAR from builder stage
 COPY --from=builder /build/target/ml-pipeline-1.0-SNAPSHOT.jar ./ml-pipeline.jar
 COPY --from=builder /build/datasets/iris.csv ./datasets/
 
-# Install minimal GCloud components (only gcloud CLI)
+# Lightweight GCloud CLI installation
 RUN apt-get update && \
     apt-get install -y curl python3 && \
     curl -sSL https://sdk.cloud.google.com > /tmp/install.sh && \
@@ -24,13 +28,4 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/install.sh
 
-# Environment configuration
-ENV PATH="/opt/google-cloud-sdk/bin:${PATH}"
-
-# Health check (optional)
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:8080/health || exit 1
-
-# Runtime configuration
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/ml-pipeline.jar"]
+ENTRYPOINT ["java", "-jar", "ml-pipeline.jar"]
