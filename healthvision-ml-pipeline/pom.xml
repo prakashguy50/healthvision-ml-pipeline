@@ -1,20 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" 
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     
+    <!-- ==================== PROJECT IDENTIFICATION ==================== -->
+    <modelVersion>4.0.0</modelVersion>
     <groupId>com.healthvision</groupId>
     <artifactId>ml-pipeline</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <!-- ==================== PROPERTIES ==================== -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
+    <!-- ==================== DEPENDENCY MANAGEMENT ==================== -->
     <dependencyManagement>
         <dependencies>
+            <!-- Google Cloud BOM for dependency version management -->
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
@@ -25,16 +30,22 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- ==================== DEPENDENCIES ==================== -->
     <dependencies>
+        <!-- WEKA Machine Learning Library -->
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
             <version>3.8.6</version>
         </dependency>
+        
+        <!-- Google Cloud Storage -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-storage</artifactId>
         </dependency>
+        
+        <!-- JUnit Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -43,8 +54,9 @@
         </dependency>
     </dependencies>
 
+    <!-- ==================== BUILD CONFIGURATION ==================== -->
     <build>
-        <!-- Add resources configuration -->
+        <!-- Resource Directories -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -66,19 +78,27 @@
             </testResource>
         </testResources>
 
+        <!-- Plugins -->
         <plugins>
+            <!-- Java Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
             </plugin>
             
+            <!-- Test Execution -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
             </plugin>
 
+            <!-- Fat JAR Creation -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -95,6 +115,17 @@
                                     <mainClass>com.healthvision.ml.Trainer</mainClass>
                                 </transformer>
                             </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <!-- Exclude signature files to prevent JNI errors -->
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
