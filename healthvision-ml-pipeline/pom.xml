@@ -6,7 +6,6 @@
     <groupId>com.healthvision</groupId>
     <artifactId>ml-pipeline</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>HealthVision ML Pipeline</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,22 +13,28 @@
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>26.30.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <!-- WEKA Machine Learning -->
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
             <version>3.8.6</version>
         </dependency>
-        
-        <!-- Google Cloud Storage -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-storage</artifactId>
-            <version>2.28.1</version>
         </dependency>
-        
-        <!-- JUnit Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -40,7 +45,6 @@
 
     <build>
         <plugins>
-            <!-- Create executable JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -60,13 +64,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            
-            <!-- Compiler Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
             </plugin>
         </plugins>
     </build>
