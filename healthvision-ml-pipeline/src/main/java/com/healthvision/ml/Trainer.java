@@ -11,7 +11,7 @@ public class Trainer {
         
         // 1. Load data
         CSVLoader loader = new CSVLoader();
-        loader.setSource(new File("datasets/iris.csv"));
+		loader.setSource(new File("/app/iris.csv"));
         Instances data = loader.getDataSet();
         data.setClassIndex(data.numAttributes() - 1);
         System.out.println("Loaded dataset with " + data.numInstances() + " instances");
