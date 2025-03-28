@@ -16,11 +16,15 @@ WORKDIR /app
 COPY --from=builder /build/target/ml-pipeline-*.jar ./app.jar
 COPY --from=builder /build/datasets/iris.csv .
 
-# Minimal GCloud CLI installation (with Python3)
+# Minimal GCloud CLI (static install - no Python needed)
 RUN apt-get update && \
-    apt-get install -y curl python3-minimal && \
-    curl -sSL https://sdk.cloud.google.com > /tmp/install.sh && \
-    bash /tmp/install.sh --disable-prompts --install-dir=/usr/local && \
-    rm -rf /var/lib/apt/lists/* /tmp/install.sh
+    apt-get install -y curl && \
+    curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-454.0.0-linux-x86_64.tar.gz && \
+    tar -xf google-cloud-cli-*.tar.gz -C /usr/local && \
+    /usr/local/google-cloud-sdk/install.sh --usage-reporting=false --command-completion=false --path-update=false && \
+    rm google-cloud-cli-*.tar.gz && \
+    apt-get remove -y curl && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
