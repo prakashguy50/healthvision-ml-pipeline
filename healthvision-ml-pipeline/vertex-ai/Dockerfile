@@ -14,7 +14,7 @@ FROM eclipse-temurin:11-jre-jammy
 
 WORKDIR /app
 COPY --from=builder /build/target/ml-pipeline-*.jar ./app.jar
-COPY --from=builder /build/datasets/iris.csv .
+
 # Ensure proper dataset path:
 COPY --from=builder /build/datasets/iris.csv /app/iris.csv
 
