@@ -1,5 +1,27 @@
-deploy:
-	@chmod +x deploy.sh
-	@./deploy.sh
+# Deployment Control
+deploy: validate
+	@echo "Starting deployment..."
+	@chmod +x scripts/deploy.sh && ./scripts/deploy.sh
 
-.PHONY: deploy
+# CI/CD Trigger
+trigger-workflow:
+	@echo "Triggering GitHub Actions workflow..."
+	@gh workflow run deploy-model.yml --ref $(shell git branch --show-current)
+
+# Validation
+validate:
+	@echo "Validating configuration..."
+	@test -f .github/workflows/deploy-model.yml || (echo "Error: Missing deploy-model.yml"; exit 1)
+	@test -f scripts/deploy.sh || (echo "Error: Missing deploy.sh"; exit 1)
+	@test -n "$(shell gcloud config get-value project)" || (echo "Error: GCP project not configured"; exit 1)
+
+# Utility
+status:
+	@echo "Current deployments:"
+	@gcloud ai endpoints list --region=us-central1 --format="table(name,displayName,createTime)"
+
+clean:
+	@echo "Cleaning temporary files..."
+	@rm -f *.log
+
+.PHONY: deploy trigger-workflow validate status clean

@@ -1,4 +1,4 @@
-name: Enhanced Model Deployment
+name: Vertex AI Model Deployment
 on:
   workflow_run:
     workflows: ["Train Model Pipeline"]
@@ -10,53 +10,65 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+      GCP_REGION: us-central1
     
     steps:
     - uses: actions/checkout@v4
-    - uses: google-github-actions/setup-gcloud@v1
+    
+    - name: Set up gcloud
+      uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT }}
         service_account_key: ${{ secrets.GCP_SA_KEY }}
-        
-    - name: Get Last Training Output
+        export_default_credentials: true
+
+    - name: Get Training Output
       id: training
       run: |
-        echo "MODEL_URI=$(gsutil ls gs://$GCP_PROJECT-model-outputs/ | tail -1)" >> $GITHUB_OUTPUT
-        
-    - name: Create/Reuse Endpoint
+        MODEL_URI=$(gsutil ls gs://$GCP_PROJECT-model-outputs/ | grep -v "/$" | tail -1)
+        echo "MODEL_URI=$MODEL_URI" >> $GITHUB_OUTPUT
+        echo "MODEL_DIR=$(dirname $MODEL_URI)" >> $GITHUB_OUTPUT
+
+    - name: Create or Reuse Endpoint
       id: endpoint
       run: |
         ENDPOINT_ID=$(gcloud ai endpoints list \
-          --region=us-central1 \
-          --format="value(name)" \
-          --filter="displayName=iris-endpoint" | head -1)
+          --region=$GCP_REGION \
+          --filter="displayName=iris-endpoint" \
+          --format="value(name)" | head -1)
         
-        if [ -z "$ENPOINT_ID" ]; then
+        if [ -z "$ENDPOINT_ID" ]; then
           ENDPOINT_ID=$(gcloud ai endpoints create \
             --display-name=iris-endpoint \
-            --region=us-central1 \
+            --region=$GCP_REGION \
             --format="value(name)")
         fi
         echo "ENDPOINT_ID=$ENDPOINT_ID" >> $GITHUB_OUTPUT
-        
-    - name: Register New Model Version
+
+    - name: Register Model
+      id: model
       run: |
-        gcloud ai models upload \
-          --region=us-central1 \
-          --display-name="iris-model-$(date +%s)" \
+        MODEL_ID=$(gcloud ai models upload \
+          --region=$GCP_REGION \
+          --display-name="iris-model-$(date +%Y%m%d-%H%M%S)" \
           --container-image-uri=gcr.io/$GCP_PROJECT/ml-pipeline:prod-final \
-          --artifact-uri=${{ steps.training.outputs.MODEL_URI }}
-          
+          --artifact-uri=${{ steps.training.outputs.MODEL_DIR }} \
+          --format="value(name)")
+        echo "MODEL_ID=$MODEL_ID" >> $GITHUB_OUTPUT
+
     - name: Deploy Model
       run: |
         gcloud ai endpoints deploy-model ${{ steps.endpoint.outputs.ENDPOINT_ID }} \
-          --model=$MODEL_ID \
-          --traffic-split=0=100 \
+          --region=$GCP_REGION \
+          --model=${{ steps.model.outputs.MODEL_ID }} \
+          --display-name="iris-production" \
           --machine-type=n1-standard-4 \
-          --region=us-central1
-          
+          --min-replica-count=1 \
+          --max-replica-count=2 \
+          --traffic-split=0=100
+
     - name: Verify Deployment
       run: |
         gcloud ai endpoints describe ${{ steps.endpoint.outputs.ENDPOINT_ID }} \
-          --region=us-central1 \
+          --region=$GCP_REGION \
           --format="value(deployedModels.id)" | grep -q "." || exit 1
