@@ -1,0 +1,27 @@
+{
+  "pipelineSpec": {
+    "components": {
+      "comp-deploy": {
+        "executorLabel": "exec-deploy",
+        "inputDefinitions": {
+          "parameters": {
+            "job_id": {"type": "STRING"}
+          }
+        }
+      }
+    },
+    "deploymentSpec": {
+      "executors": {
+        "exec-deploy": {
+          "container": {
+            "image": "gcr.io/google.com/cloudsdktool/cloud-sdk",
+            "command": ["/bin/bash", "-c"],
+            "args": [
+              "gcloud ai models upload ... && gcloud ai endpoints create ..."
+            ]
+          }
+        }
+      }
+    }
+  }
+}

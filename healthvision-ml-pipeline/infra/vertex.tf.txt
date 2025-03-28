@@ -1,0 +1,22 @@
+resource "google_vertex_ai_model" "iris" {
+  name          = "iris-model"
+  region        = "us-central1"
+  artifact_uri  = var.model_dir
+  container_spec {
+    image_uri = "gcr.io/healthvision-ml-dev/ml-pipeline:prod-final"
+  }
+}
+
+resource "google_vertex_ai_endpoint" "iris" {
+  name         = "iris-endpoint"
+  region       = "us-central1"
+  display_name = "iris-endpoint"
+}
+
+resource "google_vertex_ai_endpoint_deployment" "iris" {
+  endpoint = google_vertex_ai_endpoint.iris.id
+  deployed_model {
+    model = google_vertex_ai_model.iris.id
+    machine_type = "n1-standard-4"
+  }
+}

@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args: ['chmod', '+x', './deploy.sh']
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args: ['./deploy.sh']
+  env:
+  - 'JOB_ID=$_JOB_ID'
+options:
+  substitution_option: 'ALLOW_LOOSE'
