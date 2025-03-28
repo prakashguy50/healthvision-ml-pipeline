@@ -13,28 +13,20 @@ RUN mvn clean package -DskipTests -B
 FROM eclipse-temurin:11-jre-jammy
 
 WORKDIR /app
-COPY --from=builder /build/target/ml-pipeline-*.jar ./app.jar
-COPY --from=builder /build/datasets/iris.csv ./iris.csv
 
-# Install minimal dependencies and clean up
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    python3 \
-    python3-pip && \
-    pip3 install --no-cache-dir google-cloud-aiplatform && \
-    rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
+# Vertex AI required paths (MUST include these)
 ENV AIP_MODEL_DIR=/app/model
 ENV AIP_DATA_DIR=/app/data
-
-# Create required directories
 RUN mkdir -p ${AIP_MODEL_DIR} ${AIP_DATA_DIR}
 
-# Health check (optional)
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Copy artifacts to Vertex AI standard paths
+COPY --from=builder /build/target/ml-pipeline-*.jar ./app.jar
+COPY --from=builder /build/datasets/iris.csv ${AIP_DATA_DIR}/iris.csv
 
-# Improved entrypoint with error handling
-ENTRYPOINT ["sh", "-c", "java -cp app.jar com.healthvision.ml.Trainer || { echo 'Application failed'; exit 1; }"]
+# Simplified runtime - remove unnecessary dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Vertex AI-optimized entrypoint
+ENTRYPOINT ["sh", "-c", "java -Djava.util.logging.SimpleFormatter.format='[%1$tF %1$tT] [%4$-7s] %5$s %n' -cp app.jar com.healthvision.ml.Trainer 2>&1 | tee ${AIP_MODEL_DIR}/output.log"]
