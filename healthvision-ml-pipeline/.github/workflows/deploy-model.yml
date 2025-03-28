@@ -1,0 +1,43 @@
+name: Deploy Model
+on:
+  workflow_run:
+    workflows: ["Train Model Pipeline"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+    
+    steps:
+    - uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        
+    - name: Deploy to Vertex AI
+      run: |
+        ENDPOINT_ID=$(gcloud ai endpoints list \
+          --region=us-central1 \
+          --format="value(ENDPOINT_ID)" \
+          --filter="displayName=iris-endpoint" || true)
+        
+        if [ -z "$ENDPOINT_ID" ]; then
+          ENDPOINT_ID=$(gcloud ai endpoints create \
+            --display-name=iris-endpoint \
+            --region=us-central1 \
+            --format="value(name)")
+        fi
+        
+        MODEL_ID=$(gcloud ai models list \
+          --region=us-central1 \
+          --format="value(MODEL_ID)" \
+          --filter="displayName=iris-model" | head -1)
+        
+        gcloud ai endpoints deploy-model $ENDPOINT_ID \
+          --model=$MODEL_ID \
+          --machine-type=n1-standard-4 \
+          --region=us-central1
