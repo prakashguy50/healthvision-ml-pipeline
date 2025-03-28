@@ -1,0 +1,12 @@
+# Ignore temporary files
+*.tmp
+*.log
+*.bak
+
+# Ignore IDE files
+.idea/
+*.iml
+
+# Ignore build outputs
+target/
+bin/
