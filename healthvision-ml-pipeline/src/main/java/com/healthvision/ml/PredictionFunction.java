@@ -8,45 +8,15 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.logging.Logger;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-import com.google.cloud.storage.Blob;
-import weka.classifiers.Classifier;
-import weka.core.Instance;
+import weka.core.DenseInstance;
 import weka.core.Instances;
-import weka.core.SerializationHelper;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 
 public class PredictionFunction implements HttpFunction {
     private static final Logger logger = Logger.getLogger(PredictionFunction.class.getName());
     private static final Gson gson = new Gson();
-    private static Classifier model;
-    private static Instances datasetHeader;
-    
-    static {
-        try {
-            // Initialize GCS client
-            Storage storage = StorageOptions.getDefaultInstance().getService();
-            
-            // Load model from GCS
-            Blob modelBlob = storage.get("healthvision-ml-20250328-23525", "iris-model.j48");
-            InputStream modelStream = new ByteArrayInputStream(modelBlob.getContent());
-            model = (Classifier) SerializationHelper.read(modelStream);
-            
-            // Load dataset header for structure
-            Blob headerBlob = storage.get("healthvision-ml-20250328-23525", "dataset-header.arff");
-            InputStream headerStream = new ByteArrayInputStream(headerBlob.getContent());
-            datasetHeader = new Instances(headerStream);
-            datasetHeader.setClassIndex(datasetHeader.numAttributes() - 1);
-            
-            logger.info("Model and dataset header loaded successfully");
-        } catch (Exception e) {
-            logger.severe("Initialization failed: " + e.getMessage());
-            throw new RuntimeException("Initialization failed", e);
-        }
-    }
+    private final DiabetesPredictor predictor = new DiabetesPredictor();
 
     @Override
     public void service(HttpRequest request, HttpResponse response) 
@@ -55,25 +25,26 @@ public class PredictionFunction implements HttpFunction {
         BufferedWriter writer = response.getWriter();
         
         try {
-            JsonObject requestJson = gson.fromJson(request.getReader(), JsonObject.class);
+            JsonObject requestJson = gson.fromJson(new InputStreamReader(request.getInputStream()), JsonObject.class);
             JsonObject responseJson = new JsonObject();
             
-            if (requestJson.has("sepalLength") && requestJson.has("sepalWidth") &&
-                requestJson.has("petalLength") && requestJson.has("petalWidth")) {
+            if (requestJson.has("pregnancies") && requestJson.has("glucose") &&
+                requestJson.has("bloodPressure") && requestJson.has("skinThickness") &&
+                requestJson.has("insulin") && requestJson.has("bmi") &&
+                requestJson.has("diabetesPedigreeFunction") && requestJson.has("age")) {
                 
-                // Create instance for prediction
-                Instance instance = new Instance(datasetHeader.numAttributes());
-                instance.setDataset(datasetHeader);
-                instance.setValue(0, requestJson.get("sepalLength").getAsDouble());
-                instance.setValue(1, requestJson.get("sepalWidth").getAsDouble());
-                instance.setValue(2, requestJson.get("petalLength").getAsDouble());
-                instance.setValue(3, requestJson.get("petalWidth").getAsDouble());
+                String prediction = predictor.predict(
+                    requestJson.get("pregnancies").getAsDouble(),
+                    requestJson.get("glucose").getAsDouble(),
+                    requestJson.get("bloodPressure").getAsDouble(),
+                    requestJson.get("skinThickness").getAsDouble(),
+                    requestJson.get("insulin").getAsDouble(),
+                    requestJson.get("bmi").getAsDouble(),
+                    requestJson.get("diabetesPedigreeFunction").getAsDouble(),
+                    requestJson.get("age").getAsDouble()
+                );
                 
-                // Make prediction
-                double prediction = model.classifyInstance(instance);
-                String predictedClass = datasetHeader.classAttribute().value((int)prediction);
-                
-                responseJson.addProperty("prediction", predictedClass);
+                responseJson.addProperty("prediction", prediction);
                 writer.write(gson.toJson(responseJson));
             } else {
                 response.setStatusCode(400);
