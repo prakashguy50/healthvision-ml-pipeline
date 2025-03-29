@@ -1,0 +1,61 @@
+package com.healthvision.ml;
+
+import com.google.cloud.functions.HttpFunction;
+import com.google.cloud.functions.HttpRequest;
+import com.google.cloud.functions.HttpResponse;
+import com.google.gson.Gson;
+import java.io.BufferedWriter;
+import java.io.IOException;
+
+public class PredictionFunction implements HttpFunction {
+    private final Predictor predictor;
+    private final Gson gson = new Gson();
+    
+    public PredictionFunction() throws Exception {
+        this.predictor = new Predictor();
+    }
+    
+    @Override
+    public void service(HttpRequest request, HttpResponse response) 
+        throws IOException {
+        try {
+            // Parse request
+            PredictionRequest input = gson.fromJson(
+                request.getReader(), 
+                PredictionRequest.class
+            );
+            
+            // Make prediction
+            String result = predictor.predict(
+                input.sepalLength,
+                input.sepalWidth,
+                input.petalLength,
+                input.petalWidth
+            );
+            
+            // Send response
+            response.setContentType("application/json");
+            BufferedWriter writer = response.getWriter();
+            writer.write(gson.toJson(new PredictionResult(result)));
+            
+        } catch (Exception e) {
+            response.setStatusCode(500);
+            response.getWriter().write("{\"error\":\"" + e.getMessage() + "\"}");
+        }
+    }
+    
+    static class PredictionRequest {
+        double sepalLength;
+        double sepalWidth;
+        double petalLength;
+        double petalWidth;
+    }
+    
+    static class PredictionResult {
+        String class;
+        
+        PredictionResult(String class) {
+            this.class = class;
+        }
+    }
+}
