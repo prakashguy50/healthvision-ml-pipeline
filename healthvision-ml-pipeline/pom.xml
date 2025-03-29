@@ -21,10 +21,6 @@
         <gson.version>2.10.1</gson.version>
         <weka.version>3.8.6</weka.version>
         <junit.version>5.9.2</junit.version>
-        <function.name>healthvision-predictor</function.name>
-        <gcp.project.id>healthvision-ml-dev</gcp.project.id>
-        <gcp.region>us-central1</gcp.region>
-        <function.runtime>java17</function.runtime>
     </properties>
 
     <dependencies>
@@ -97,7 +93,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Correct Google Cloud Functions Plugin -->
+            <!-- Google Cloud Functions Plugin -->
             <plugin>
                 <groupId>com.google.cloud.functions</groupId>
                 <artifactId>functions-framework-maven-plugin</artifactId>
@@ -107,6 +103,7 @@
                 </configuration>
             </plugin>
 
+            <!-- Shading Plugin to package dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -119,6 +116,7 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+							<shadedArtifactAttached>false</shadedArtifactAttached>  <!-- Prevents original JAR -->
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
