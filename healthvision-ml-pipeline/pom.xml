@@ -18,6 +18,8 @@
         <google.cloud.storage.version>2.20.1</google.cloud.storage.version>
         <weka.version>3.8.6</weka.version>
         <junit.version>5.9.2</junit.version>
+        <tensorflow.version>1.15.0</tensorflow.version>
+        <google.ai.platform.version>2.8.0</google.ai.platform.version>
     </properties>
 
     <dependencyManagement>
@@ -45,11 +47,31 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Spring Boot Actuator for monitoring -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Google Cloud Storage -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-storage</artifactId>
             <version>${google.cloud.storage.version}</version>
+        </dependency>
+
+        <!-- Google Cloud AI Platform -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-aiplatform</artifactId>
+            <version>${google.ai.platform.version}</version>
+        </dependency>
+
+        <!-- TensorFlow for ML Model Inference -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow</artifactId>
+            <version>${tensorflow.version}</version>
         </dependency>
 
         <!-- WEKA Machine Learning -->
@@ -71,6 +93,18 @@
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Logging Dependencies -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>7.3</version>
         </dependency>
     </dependencies>
 
@@ -111,6 +145,16 @@
                                     <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
                                 </transformer>
                             </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                         </configuration>
                     </execution>
                 </executions>
