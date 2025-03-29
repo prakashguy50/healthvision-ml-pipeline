@@ -1,5 +1,6 @@
 # ==================== BUILD STAGE ====================
-FROM maven:3.8.6-eclipse-temurin-11 AS builder
+FROM maven:3.8.6-eclipse-temurin-17 AS builder
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /build
 COPY pom.xml ./ 
