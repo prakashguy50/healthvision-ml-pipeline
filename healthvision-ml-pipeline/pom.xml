@@ -22,7 +22,7 @@
         <weka.version>3.8.6</weka.version>
         <junit.version>5.9.2</junit.version>
         <function.name>healthvision-predictor</function.name>
-        <gcp.project.id>your-gcp-project-id</gcp.project.id>
+        <gcp.project.id>healthvision-ml-dev</gcp.project.id>
         <gcp.region>us-central1</gcp.region>
     </properties>
 
