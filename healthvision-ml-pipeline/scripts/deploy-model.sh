@@ -12,6 +12,7 @@ SERVICE_ACCOUNT="vertex-ai-service-account@${GCP_PROJECT}.iam.gserviceaccount.co
 [ -z "$GCP_PROJECT" ] && { echo "❌ GCP project not specified"; exit 1; }
 
 # Get latest successful training job
+echo "🔎 Finding latest training job..."
 JOB_ID=$(gcloud ai custom-jobs list \
   --region=$GCP_REGION \
   --filter="state=JOB_STATE_SUCCEEDED" \
@@ -20,14 +21,30 @@ JOB_ID=$(gcloud ai custom-jobs list \
   --limit=1)
 
 [ -z "$JOB_ID" ] && { echo "❌ No successful training jobs found"; exit 1; }
+echo "✔ Found job: $JOB_ID"
 
-# Get model artifacts with validation
+# Get model artifacts with multiple fallback methods
+echo "🔄 Extracting model artifacts..."
 MODEL_DIR=$(gcloud ai custom-jobs describe $JOB_ID \
   --region=$GCP_REGION \
-  --format="value(jobSpec.workerPoolSpecs[0].containerSpec.args)" | \
-  grep -o "gs://[^ ]*/model" || true)
+  --format="json" | \
+  jq -r '.jobSpec.workerPoolSpecs[0].containerSpec.args[] | select(contains("model"))' || true)
 
-[ -z "$MODEL_DIR" ] && { echo "❌ Failed to extract model artifacts"; exit 1; }
+# Fallback to text extraction if jq fails
+[ -z "$MODEL_DIR" ] && {
+  MODEL_DIR=$(gcloud ai custom-jobs describe $JOB_ID \
+    --region=$GCP_REGION \
+    --format="value(jobSpec.workerPoolSpecs[0].containerSpec.args)" | \
+    grep -o "gs://[^ ]*/model" || true)
+}
+
+# Final validation
+[ -z "$MODEL_DIR" ] && {
+  echo "❌ Failed to extract model artifacts. Full job description:"
+  gcloud ai custom-jobs describe $JOB_ID --region=$GCP_REGION --format=json
+  exit 1
+}
+echo "✔ Model artifacts found at: $MODEL_DIR"
 
 # Register model with versioning
 echo "📦 Registering model version: $MODEL_NAME..."
