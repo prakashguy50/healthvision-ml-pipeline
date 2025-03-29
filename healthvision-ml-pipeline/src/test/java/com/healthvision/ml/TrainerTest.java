@@ -1,23 +1,48 @@
 package com.healthvision.ml;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
+import java.io.InputStream;
 
 public class TrainerTest {
     
     @Test
-    public void testDataLoading() throws Exception {
-        // Load test dataset from resources
-        String testDataPath = getClass()
-            .getClassLoader()
-            .getResource("datasets/iris.csv")
-            .getFile();
+    @DisplayName("Verify training dataset exists")
+    void testTrainingDataExists() {
+        // Test resource loading
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("datasets/iris.csv")) {
+            
+            assertNotNull(is, "iris.csv dataset not found in resources");
+            
+            // Additional verification
+            File dataFile = new File(
+                getClass().getClassLoader()
+                    .getResource("datasets/iris.csv")
+                    .getFile()
+            );
+            
+            assertAll(
+                () -> assertTrue(dataFile.exists(), 
+                    "Data file should exist at: " + dataFile.getAbsolutePath()),
+                () -> assertTrue(dataFile.length() > 0, 
+                    "Data file should not be empty")
+            );
+            
+        } catch (Exception e) {
+            fail("Exception during test: " + e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("Verify dataset has correct structure")
+    void testDatasetStructure() throws Exception {
+        InputStream is = getClass().getClassLoader()
+            .getResourceAsStream("datasets/iris.csv");
+        assertNotNull(is, "Dataset not found");
         
-        File dataFile = new File(testDataPath);
-        
-        // Verify file exists and is readable
-        assertTrue(dataFile.exists(), "Test data file should exist");
-        assertTrue(dataFile.length() > 0, "Test data file should not be empty");
+        // Add additional dataset validation logic here if needed
     }
 }

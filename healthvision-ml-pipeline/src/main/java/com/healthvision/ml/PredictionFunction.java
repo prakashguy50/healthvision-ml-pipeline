@@ -31,7 +31,12 @@ public class PredictionFunction implements HttpFunction {
         
         try {
             JsonObject requestJson = gson.fromJson(request.getReader(), JsonObject.class);
-            validateRequest(requestJson);
+            
+            // Validate request
+            if (!requestJson.has("sepalLength") || !requestJson.has("sepalWidth") || 
+                !requestJson.has("petalLength") || !requestJson.has("petalWidth")) {
+                throw new IllegalArgumentException("Missing required fields");
+            }
             
             String prediction = predictor.predict(
                 requestJson.get("sepalLength").getAsDouble(),
@@ -54,20 +59,6 @@ public class PredictionFunction implements HttpFunction {
             logger.severe("Prediction error: " + e.getMessage());
             response.setStatusCode(500);
             writer.write("{\"error\":\"Internal server error\"}");
-        }
-    }
-    
-    private void validateRequest(JsonObject requestJson) {
-        String[] required = {"sepalLength", "sepalWidth", "petalLength", "petalWidth"};
-        for (String field : required) {
-            if (!requestJson.has(field)) {
-                throw new IllegalArgumentException("Missing field: " + field);
-            }
-            try {
-                requestJson.get(field).getAsDouble();
-            } catch (Exception e) {
-                throw new IllegalArgumentException(field + " must be a number");
-            }
         }
     }
 }
