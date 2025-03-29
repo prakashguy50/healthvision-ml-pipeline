@@ -25,6 +25,7 @@
         <gcp.project.id>healthvision-ml-dev</gcp.project.id>
         <gcp.region>us-central1</gcp.region>
         <function.runtime>java11</function.runtime>
+        <functions.framework.version>1.10.1</functions.framework.version>
     </properties>
 
     <dependencies>
@@ -35,11 +36,20 @@
             <version>${google.cloud.storage.version}</version>
         </dependency>
 
-        <!-- Google Cloud Functions -->
+        <!-- Google Cloud Functions Framework -->
         <dependency>
             <groupId>com.google.cloud.functions</groupId>
             <artifactId>functions-framework-api</artifactId>
             <version>${google.cloud.functions.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Functions Framework Invoker for local testing -->
+        <dependency>
+            <groupId>com.google.cloud.functions</groupId>
+            <artifactId>functions-framework-invoker</artifactId>
+            <version>${functions.framework.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- GSON for JSON processing -->
@@ -97,30 +107,18 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
-                <configuration>
-                    <useSystemClassLoader>false</useSystemClassLoader>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>com.google.cloud.functions</groupId>
                 <artifactId>function-maven-plugin</artifactId>
                 <version>0.11.0</version>
                 <configuration>
                     <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
-                    <name>${function.name}</name>
-                    <projectId>${gcp.project.id}</projectId>
-                    <region>${gcp.region}</region>
-                    <entryPoint>com.healthvision.ml.PredictionFunction</entryPoint>
-                    <runtime>${function.runtime}</runtime>
+                    <port>8080</port>
                     <memory>512MB</memory>
-                    <timeout>60s</timeout>
+                    <timeout>300s</timeout>
                     <trigger-http>true</trigger-http>
                     <envVars>
                         <GCP_PROJECT>${gcp.project.id}</GCP_PROJECT>
+                        <PORT>8080</PORT>
                     </envVars>
                 </configuration>
             </plugin>
@@ -141,40 +139,8 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
                                 </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/deployment"/>
-                                <copy file="${project.build.directory}/${project.build.finalName}.jar" 
-                                      tofile="${project.build.directory}/deployment/function.jar"/>
-                                <echo file="${project.build.directory}/deployment/function.yaml"
-                                      message="runtime: java11${line.separator}entryPoint: com.healthvision.ml.PredictionFunction"/>
-                            </target>
                         </configuration>
                     </execution>
                 </executions>

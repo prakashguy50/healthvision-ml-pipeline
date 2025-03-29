@@ -10,17 +10,35 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.Logger;
-import weka.core.DenseInstance;
-import weka.core.Instances;
 
 public class PredictionFunction implements HttpFunction {
     private static final Logger logger = Logger.getLogger(PredictionFunction.class.getName());
     private static final Gson gson = new Gson();
-    private final DiabetesPredictor predictor = new DiabetesPredictor();
+    private final DiabetesPredictor predictor;
+    
+    static {
+        // Initialize port for Cloud Run
+        String port = System.getenv("PORT");
+        if (port == null) {
+            port = "8080";
+            System.setProperty("PORT", port);
+        }
+        logger.info("Initializing function on port: " + port);
+    }
+
+    public PredictionFunction() {
+        try {
+            logger.info("Initializing DiabetesPredictor...");
+            this.predictor = new DiabetesPredictor();
+            logger.info("DiabetesPredictor initialized successfully");
+        } catch (Exception e) {
+            logger.severe("Failed to initialize DiabetesPredictor: " + e.getMessage());
+            throw new RuntimeException("Failed to initialize DiabetesPredictor", e);
+        }
+    }
 
     @Override
-    public void service(HttpRequest request, HttpResponse response) 
-            throws IOException {
+    public void service(HttpRequest request, HttpResponse response) throws IOException {
         response.setContentType("application/json");
         BufferedWriter writer = response.getWriter();
         
