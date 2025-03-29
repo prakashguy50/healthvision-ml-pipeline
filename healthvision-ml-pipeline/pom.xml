@@ -14,6 +14,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <junit.version>5.8.2</junit.version>
+        <weka.version>3.8.6</weka.version>
     </properties>
 
     <!-- ==================== DEPENDENCY MANAGEMENT ==================== -->
@@ -36,7 +38,7 @@
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
-            <version>3.8.6</version>
+            <version>${weka.version}</version>
         </dependency>
         
         <!-- Google Cloud Storage -->
@@ -48,8 +50,14 @@
         <!-- JUnit Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.8.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -61,6 +69,7 @@
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
+            <!-- Add this if you want to include datasets in main JAR -->
             <resource>
                 <directory>datasets</directory>
                 <includes>
@@ -71,9 +80,9 @@
 
         <testResources>
             <testResource>
-                <directory>datasets</directory>
+                <directory>src/test/resources</directory>
                 <includes>
-                    <include>*.csv</include>
+                    <include>**/*.csv</include>
                 </includes>
             </testResource>
         </testResources>
@@ -96,6 +105,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                    </includes>
+                </configuration>
             </plugin>
 
             <!-- Fat JAR Creation -->
@@ -119,7 +133,6 @@
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <!-- Exclude signature files to prevent JNI errors -->
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
