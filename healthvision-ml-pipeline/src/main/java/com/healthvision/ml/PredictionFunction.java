@@ -19,19 +19,12 @@ public class PredictionFunction implements HttpFunction {
     static {
         logger.info("Starting function initialization...");
         try {
-            // Set default port for Cloud Run
-            String port = System.getenv("PORT");
-            if (port == null) {
-                port = "8080";
-                System.setProperty("PORT", port);
-            }
-            
             // Initialize predictor with timeout settings
             System.setProperty("sun.net.client.defaultConnectTimeout", "30000");
             System.setProperty("sun.net.client.defaultReadTimeout", "30000");
             
             predictor = new DiabetesPredictor();
-            logger.info("Function initialized successfully on port: " + port);
+            logger.info("Function initialized successfully.");
         } catch (Exception e) {
             logger.severe("FATAL: Failed to initialize function: " + e.getMessage());
             throw new RuntimeException("Initialization failed", e);
