@@ -97,21 +97,13 @@
                 </configuration>
             </plugin>
 
+            <!-- Correct Google Cloud Functions Plugin -->
             <plugin>
                 <groupId>com.google.cloud.functions</groupId>
-                <artifactId>function-maven-plugin</artifactId>
-                <version>0.11.0</version>
+                <artifactId>functions-framework-maven-plugin</artifactId>
+                <version>1.0.4</version>
                 <configuration>
                     <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
-                    <port>8080</port>
-                    <memory>512MB</memory>
-                    <timeout>540s</timeout>
-                    <trigger-http>true</trigger-http>
-                    <envVars>
-                        <GCP_PROJECT>${gcp.project.id}</GCP_PROJECT>
-                        <PORT>8080</PORT>
-                        <GOOGLE_FUNCTION_SOURCE>/</GOOGLE_FUNCTION_SOURCE>
-                    </envVars>
                 </configuration>
             </plugin>
 
