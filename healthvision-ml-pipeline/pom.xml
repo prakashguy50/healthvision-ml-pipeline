@@ -13,17 +13,38 @@
     <description>Machine learning pipeline for HealthVision project</description>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>17</java.version>
+        <spring.boot.version>3.2.3</spring.boot.version>
         <google.cloud.storage.version>2.20.1</google.cloud.storage.version>
-        <google.cloud.functions.version>1.1.0</google.cloud.functions.version>
-        <gson.version>2.10.1</gson.version>
         <weka.version>3.8.6</weka.version>
         <junit.version>5.9.2</junit.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <!-- Spring Boot Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Web for REST APIs -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
         <!-- Google Cloud Storage -->
         <dependency>
             <groupId>com.google.cloud</groupId>
@@ -31,39 +52,14 @@
             <version>${google.cloud.storage.version}</version>
         </dependency>
 
-        <!-- Google Cloud Functions -->
-        <dependency>
-            <groupId>com.google.cloud.functions</groupId>
-            <artifactId>functions-framework-api</artifactId>
-            <version>${google.cloud.functions.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- GSON for JSON processing -->
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>${gson.version}</version>
-        </dependency>
-
         <!-- WEKA Machine Learning -->
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
             <version>${weka.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.github.fracpete</groupId>
-                    <artifactId>java-cup-runtime</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>nz.ac.waikato.cms.weka</groupId>
-                    <artifactId>thirdparty</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
-        <!-- Testing -->
+        <!-- JUnit for Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -80,30 +76,24 @@
 
     <build>
         <plugins>
+            <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
 
-            <!-- Google Cloud Functions Plugin -->
+            <!-- Spring Boot Maven Plugin -->
             <plugin>
-                <groupId>com.google.cloud.functions</groupId>
-                <artifactId>functions-framework-maven-plugin</artifactId>
-                <version>1.0.4</version>
-                <configuration>
-                    <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
-                </configuration>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Shading Plugin to package dependencies -->
+            <!-- Maven Shade Plugin for Uber Jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -116,7 +106,6 @@
                         </goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
-							<shadedArtifactAttached>false</shadedArtifactAttached>  <!-- Prevents original JAR -->
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
