@@ -4,11 +4,12 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.storage.Blob;
 import weka.classifiers.Classifier;
-import weka.core.Instance;
+import weka.core.DenseInstance;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
 public class DiabetesPredictor {
@@ -30,13 +31,13 @@ public class DiabetesPredictor {
             InputStream modelStream = new ByteArrayInputStream(modelBlob.getContent());
             this.model = (Classifier) SerializationHelper.read(modelStream);
             
-            // Load dataset header for structure
+            // Load dataset header for structure - FIXED: Using InputStreamReader
             Blob headerBlob = storage.get(
                 System.getProperty("gcs.bucket", "healthvision-ml-20250328-23525"),
                 System.getProperty("dataset.header", "dataset-header.arff")
             );
             InputStream headerStream = new ByteArrayInputStream(headerBlob.getContent());
-            this.datasetHeader = new Instances(headerStream);
+            this.datasetHeader = new Instances(new InputStreamReader(headerStream), 0); // Added capacity parameter
             this.datasetHeader.setClassIndex(this.datasetHeader.numAttributes() - 1);
             
             this.predictionThreshold = Double.parseDouble(
@@ -54,8 +55,8 @@ public class DiabetesPredictor {
                         double skinThickness, double insulin, double bmi,
                         double diabetesPedigreeFunction, double age) {
         try {
-            // Create instance for prediction
-            Instance instance = new Instance(datasetHeader.numAttributes());
+            // FIXED: Using DenseInstance instead of abstract Instance
+            DenseInstance instance = new DenseInstance(datasetHeader.numAttributes());
             instance.setDataset(datasetHeader);
             
             // Set feature values (adjust indices based on your dataset structure)
