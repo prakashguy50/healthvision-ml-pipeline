@@ -1,0 +1,13 @@
+@RELATION diabetes
+
+@ATTRIBUTE pregnancies NUMERIC
+@ATTRIBUTE glucose NUMERIC
+@ATTRIBUTE bloodPressure NUMERIC
+@ATTRIBUTE skinThickness NUMERIC
+@ATTRIBUTE insulin NUMERIC
+@ATTRIBUTE bmi NUMERIC
+@ATTRIBUTE diabetesPedigreeFunction NUMERIC
+@ATTRIBUTE age NUMERIC
+@ATTRIBUTE class {0,1}
+
+@DATA

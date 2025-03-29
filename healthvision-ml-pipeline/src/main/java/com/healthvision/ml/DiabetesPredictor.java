@@ -27,7 +27,7 @@ public class DiabetesPredictor {
             
             // Load model from GCS
             String bucketName = System.getProperty("gcs.bucket", "healthvision-ml-20250328-23525");
-            String modelName = System.getProperty("model.name", "iris-model.j48");
+			String modelName = System.getProperty("model.name", "models/iris-model.j48");
             
             logger.info("Loading model from gs://" + bucketName + "/" + modelName);
             Blob modelBlob = storage.get(bucketName, modelName);
@@ -40,7 +40,7 @@ public class DiabetesPredictor {
             }
             
             // Load dataset header
-            String headerName = System.getProperty("dataset.header", "dataset-header.arff");
+			String headerName = System.getProperty("dataset.header", "models/dataset-header.arff");
             logger.info("Loading header from gs://" + bucketName + "/" + headerName);
             Blob headerBlob = storage.get(bucketName, headerName);
             if (headerBlob == null) {
