@@ -1,37 +1,30 @@
 package com.healthvision.ml;
 
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.classifiers.Classifier;
 import java.io.File;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 public class Predictor {
-    private final Classifier model;
-    private static final String MODEL_PATH = "gs://healthvision-ml-20250328-23525/models/iris-model.j48";
+    private Classifier model;
     
     public Predictor() throws Exception {
-        this.model = loadModel();
+        String modelPath = "gs://healthvision-ml-20250328-23525/models/iris-model.j48";
+        this.model = loadModel(modelPath);
     }
     
-    private Classifier loadModel() throws Exception {
-        // Create temp file
+    private Classifier loadModel(String modelPath) throws Exception {
         File tempFile = File.createTempFile("model-", ".j48");
         tempFile.deleteOnExit();
-        
-        // Download from GCS
-        new GCSClient().downloadModel(MODEL_PATH, tempFile.getAbsolutePath());
-        
+        new GCSClient().downloadModel(modelPath, tempFile.getAbsolutePath());
         return (Classifier) weka.core.SerializationHelper.read(tempFile.getAbsolutePath());
     }
     
-    public String predict(double sepalLength, double sepalWidth, 
+    public String predict(double sepalLength, double sepalWidth,
                         double petalLength, double petalWidth) throws Exception {
-        Instances dummy = new DataSource(getClass().getResourceAsStream("/datasets/iris.csv")).getDataSet();
+        InputStream is = getClass().getResourceAsStream("/datasets/iris.csv");
+        Instances dummy = new DataSource(is).getDataSet();
         dummy.setClassIndex(dummy.numAttributes() - 1);
         
         dummy.instance(0).setValue(0, sepalLength);

@@ -17,9 +17,7 @@ public class PredictionFunction implements HttpFunction {
     
     public PredictionFunction() {
         try {
-            // Initialize predictor with model from GCS
-            String modelPath = "gs://healthvision-ml-20250328-23525/models/iris-model.j48";
-            this.predictor = new Predictor(modelPath);
+            this.predictor = new Predictor();
             logger.info("Predictor initialized successfully");
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize predictor", e);
@@ -32,25 +30,18 @@ public class PredictionFunction implements HttpFunction {
         BufferedWriter writer = response.getWriter();
         
         try {
-            // Parse and validate request
             JsonObject requestJson = gson.fromJson(request.getReader(), JsonObject.class);
             validateRequest(requestJson);
             
-            // Extract features
-            double sepalLength = requestJson.get("sepalLength").getAsDouble();
-            double sepalWidth = requestJson.get("sepalWidth").getAsDouble();
-            double petalLength = requestJson.get("petalLength").getAsDouble();
-            double petalWidth = requestJson.get("petalWidth").getAsDouble();
+            String prediction = predictor.predict(
+                requestJson.get("sepalLength").getAsDouble(),
+                requestJson.get("sepalWidth").getAsDouble(),
+                requestJson.get("petalLength").getAsDouble(),
+                requestJson.get("petalWidth").getAsDouble()
+            );
             
-            // Make prediction
-            String prediction = predictor.predict(sepalLength, sepalWidth, petalLength, petalWidth);
-            
-            // Prepare response
             JsonObject responseJson = new JsonObject();
             responseJson.addProperty("prediction", prediction);
-            responseJson.addProperty("model", "iris-classifier");
-            responseJson.addProperty("version", "1.0");
-            
             writer.write(gson.toJson(responseJson));
             
         } catch (JsonSyntaxException e) {
@@ -67,18 +58,16 @@ public class PredictionFunction implements HttpFunction {
     }
     
     private void validateRequest(JsonObject requestJson) {
-        if (!requestJson.has("sepalLength") || !requestJson.has("sepalWidth") || 
-            !requestJson.has("petalLength") || !requestJson.has("petalWidth")) {
-            throw new IllegalArgumentException("Missing required fields in request");
-        }
-        
-        try {
-            requestJson.get("sepalLength").getAsDouble();
-            requestJson.get("sepalWidth").getAsDouble();
-            requestJson.get("petalLength").getAsDouble();
-            requestJson.get("petalWidth").getAsDouble();
-        } catch (ClassCastException | IllegalStateException e) {
-            throw new IllegalArgumentException("All features must be numeric values");
+        String[] required = {"sepalLength", "sepalWidth", "petalLength", "petalWidth"};
+        for (String field : required) {
+            if (!requestJson.has(field)) {
+                throw new IllegalArgumentException("Missing field: " + field);
+            }
+            try {
+                requestJson.get(field).getAsDouble();
+            } catch (Exception e) {
+                throw new IllegalArgumentException(field + " must be a number");
+            }
         }
     }
 }
