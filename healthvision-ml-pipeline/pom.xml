@@ -14,8 +14,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <google.cloud.storage.version>2.20.1</google.cloud.storage.version>
         <google.cloud.functions.version>1.1.0</google.cloud.functions.version>
         <gson.version>2.10.1</gson.version>
@@ -24,6 +24,7 @@
         <function.name>healthvision-predictor</function.name>
         <gcp.project.id>healthvision-ml-dev</gcp.project.id>
         <gcp.region>us-central1</gcp.region>
+        <function.runtime>java11</function.runtime>
     </properties>
 
     <dependencies>
@@ -53,6 +54,16 @@
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
             <version>${weka.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.github.fracpete</groupId>
+                    <artifactId>java-cup-runtime</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>nz.ac.waikato.cms.weka</groupId>
+                    <artifactId>thirdparty</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Testing -->
@@ -79,6 +90,9 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
@@ -86,6 +100,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
+                <configuration>
+                    <useSystemClassLoader>false</useSystemClassLoader>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -98,11 +115,79 @@
                     <projectId>${gcp.project.id}</projectId>
                     <region>${gcp.region}</region>
                     <entryPoint>com.healthvision.ml.PredictionFunction</entryPoint>
-                    <runtime>java11</runtime>
+                    <runtime>${function.runtime}</runtime>
                     <memory>512MB</memory>
                     <timeout>60s</timeout>
                     <trigger-http>true</trigger-http>
+                    <envVars>
+                        <GCP_PROJECT>${gcp.project.id}</GCP_PROJECT>
+                    </envVars>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-deployment</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>function</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Added to ensure deployment directory is created -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/deployment"/>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar" 
+                                      tofile="${project.build.directory}/deployment/function.jar"/>
+                                <echo file="${project.build.directory}/deployment/function.yaml"
+                                      message="runtime: java11${line.separator}entryPoint: com.healthvision.ml.PredictionFunction"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
