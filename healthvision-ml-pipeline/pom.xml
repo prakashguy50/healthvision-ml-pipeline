@@ -25,7 +25,6 @@
         <gcp.project.id>healthvision-ml-dev</gcp.project.id>
         <gcp.region>us-central1</gcp.region>
         <function.runtime>java11</function.runtime>
-        <functions.framework.version>1.10.1</functions.framework.version>
     </properties>
 
     <dependencies>
@@ -36,20 +35,12 @@
             <version>${google.cloud.storage.version}</version>
         </dependency>
 
-        <!-- Google Cloud Functions Framework -->
+        <!-- Google Cloud Functions -->
         <dependency>
             <groupId>com.google.cloud.functions</groupId>
             <artifactId>functions-framework-api</artifactId>
             <version>${google.cloud.functions.version}</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Functions Framework Invoker for local testing -->
-        <dependency>
-            <groupId>com.google.cloud.functions</groupId>
-            <artifactId>functions-framework-invoker</artifactId>
-            <version>${functions.framework.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- GSON for JSON processing -->
@@ -112,7 +103,11 @@
                 <version>0.11.0</version>
                 <configuration>
                     <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
-                    <port>8080</port>
+                    <name>${function.name}</name>
+                    <projectId>${gcp.project.id}</projectId>
+                    <region>${gcp.region}</region>
+                    <entryPoint>com.healthvision.ml.PredictionFunction</entryPoint>
+                    <runtime>${function.runtime}</runtime>
                     <memory>512MB</memory>
                     <timeout>300s</timeout>
                     <trigger-http>true</trigger-http>
@@ -139,7 +134,6 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>
