@@ -4,272 +4,95 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Project Coordinates -->
-    <groupId>com.example</groupId>
+    <groupId>com.healthvision</groupId>
     <artifactId>ml-pipeline</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <!-- Project Metadata -->
-    <name>ML Pipeline</name>
-    <description>Machine Learning Pipeline Project</description>
-    <url>http://example.com</url>
+    <name>HealthVision ML Pipeline</name>
+    <description>Machine learning pipeline for HealthVision project</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        
-        <!-- Dependency Versions -->
-        <junit.jupiter.version>5.9.3</junit.jupiter.version>
-        <junit.platform.version>1.9.3</junit.platform.version>
-        <surefire.version>3.1.2</surefire.version>
-        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
-        <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
+        <google.cloud.storage.version>2.20.1</google.cloud.storage.version>
+        <google.cloud.functions.version>1.1.0</google.cloud.functions.version>
+        <gson.version>2.10.1</gson.version>
+        <weka.version>3.8.6</weka.version>
+        <junit.version>5.9.2</junit.version>
     </properties>
 
     <dependencies>
-        <!-- JUnit 5 Testing Framework -->
+        <!-- Google Cloud Storage -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-storage</artifactId>
+            <version>${google.cloud.storage.version}</version>
+        </dependency>
+
+        <!-- Google Cloud Functions -->
+        <dependency>
+            <groupId>com.google.cloud.functions</groupId>
+            <artifactId>functions-framework-api</artifactId>
+            <version>${google.cloud.functions.version}</version>
+        </dependency>
+
+        <!-- GSON for JSON processing -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+
+        <!-- WEKA Machine Learning -->
+        <dependency>
+            <groupId>nz.ac.waikato.cms.weka</groupId>
+            <artifactId>weka-stable</artifactId>
+            <version>${weka.version}</version>
+        </dependency>
+
+        <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.jupiter.version}</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.jupiter.version}</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-runner</artifactId>
-            <version>${junit.platform.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Add your project-specific dependencies here -->
-        <!-- Example:
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
-            <version>3.3.2</version>
-        </dependency>
-        -->
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
-                    <compilerArgs>
-                        <arg>-Xlint:all</arg>
-                    </compilerArgs>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
 
-            <!-- Surefire Plugin for Unit Tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surefire.plugin.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.platform</groupId>
-                        <artifactId>junit-platform-surefire-provider</artifactId>
-                        <version>${junit.platform.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>org.junit.jupiter</groupId>
-                        <artifactId>junit-jupiter-engine</artifactId>
-                        <version>${junit.jupiter.version}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                        <include>**/Test*.java</include>
-                        <include>**/*Tests.java</include>
-                    </includes>
-                    <excludes>
-                        <exclude>**/*IntegrationTest.java</exclude>
-                    </excludes>
-                    <forkCount>1</forkCount>
-                    <reuseForks>true</reuseForks>
-                    <argLine>-Xmx1024m</argLine>
-                    <systemPropertyVariables>
-                        <java.util.logging.manager>org.apache.logging.log4j.jul.LogManager</java.util.logging.manager>
-                    </systemPropertyVariables>
-                </configuration>
+                <version>3.1.2</version>
             </plugin>
 
-            <!-- Jar Plugin -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <groupId>com.google.cloud.functions</groupId>
+                <artifactId>function-maven-plugin</artifactId>
+                <version>0.11.0</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>com.example.Main</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
-
-            <!-- Resources Plugin -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <nonFilteredFileExtensions>
-                        <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>png</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>jpeg</nonFilteredFileExtension>
-                        <nonFilteredFileExtension>jpg</nonFilteredFileExtension>
-                    </nonFilteredFileExtensions>
+                    <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
                 </configuration>
             </plugin>
         </plugins>
-
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-clean-plugin</artifactId>
-                    <version>3.3.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-deploy-plugin</artifactId>
-                    <version>3.1.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.12.1</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <filtering>true</filtering>
-            </testResource>
-        </testResources>
     </build>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>3.4.3</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${maven.surefire.plugin.version}</version>
-            </plugin>
-        </plugins>
-    </reporting>
-
-    <repositories>
-        <repository>
-            <id>central</id>
-            <name>Central Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <layout>default</layout>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <name>Central Repository</name>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <layout>default</layout>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>3.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.5.0</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
