@@ -1,40 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     
-    <!-- ==================== PROJECT IDENTIFICATION ==================== -->
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.healthvision</groupId>
     <artifactId>ml-pipeline</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <!-- ==================== PROPERTIES ==================== -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <junit.version>5.8.2</junit.version>
         <weka.version>3.8.6</weka.version>
+        <google.cloud.version>26.30.0</google.cloud.version>
     </properties>
 
-    <!-- ==================== DEPENDENCY MANAGEMENT ==================== -->
     <dependencyManagement>
         <dependencies>
-            <!-- Google Cloud BOM for dependency version management -->
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.30.0</version>
+                <version>${google.cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- ==================== DEPENDENCIES ==================== -->
     <dependencies>
-        <!-- WEKA Machine Learning Library -->
+        <!-- WEKA Machine Learning -->
         <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
@@ -47,7 +43,7 @@
             <artifactId>google-cloud-storage</artifactId>
         </dependency>
         
-        <!-- JUnit Testing -->
+        <!-- JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -62,18 +58,20 @@
         </dependency>
     </dependencies>
 
-    <!-- ==================== BUILD CONFIGURATION ==================== -->
     <build>
-        <!-- Resource Directories -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-            </resource>
-            <!-- Add this if you want to include datasets in main JAR -->
-            <resource>
-                <directory>datasets</directory>
                 <includes>
-                    <include>*.csv</include>
+                    <include>**/*.csv</include>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+            <!-- Include test datasets in main JAR -->
+            <resource>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>datasets/iris.csv</include>
                 </includes>
             </resource>
         </resources>
@@ -82,14 +80,12 @@
             <testResource>
                 <directory>src/test/resources</directory>
                 <includes>
-                    <include>**/*.csv</include>
+                    <include>**/*</include>
                 </includes>
             </testResource>
         </testResources>
 
-        <!-- Plugins -->
         <plugins>
-            <!-- Java Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -100,7 +96,6 @@
                 </configuration>
             </plugin>
             
-            <!-- Test Execution -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -112,7 +107,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Fat JAR Creation -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -142,6 +136,19 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.healthvision.ml.Trainer</mainClass>
+                    <arguments>
+                        <argument>classpath:datasets/iris.csv</argument>
+                        <argument>iris-model</argument>
+                    </arguments>
+                </configuration>
             </plugin>
         </plugins>
     </build>
