@@ -123,15 +123,6 @@
                         <GCP_PROJECT>${gcp.project.id}</GCP_PROJECT>
                     </envVars>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>generate-deployment</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>function</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -166,7 +157,6 @@
                 </executions>
             </plugin>
 
-            <!-- Added to ensure deployment directory is created -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
