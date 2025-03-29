@@ -1,147 +1,84 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+package com.healthvision.ml;
+
+import com.google.cloud.functions.HttpFunction;
+import com.google.cloud.functions.HttpRequest;
+import com.google.cloud.functions.HttpResponse;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.logging.Logger;
+
+public class PredictionFunction implements HttpFunction {
+    private static final Logger logger = Logger.getLogger(PredictionFunction.class.getName());
+    private final Predictor predictor;
+    private final Gson gson = new Gson();
     
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.healthvision</groupId>
-    <artifactId>ml-pipeline</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <junit.version>5.8.2</junit.version>
-        <weka.version>3.8.6</weka.version>
-        <google.cloud.version>26.30.0</google.cloud.version>
-        <functions.framework.version>1.1.0</functions.framework.version>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.google.cloud</groupId>
-                <artifactId>libraries-bom</artifactId>
-                <version>${google.cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <dependencies>
-        <!-- WEKA Machine Learning -->
-        <dependency>
-            <groupId>nz.ac.waikato.cms.weka</groupId>
-            <artifactId>weka-stable</artifactId>
-            <version>${weka.version}</version>
-        </dependency>
+    public PredictionFunction() {
+        try {
+            // Initialize predictor with model from GCS
+            String modelPath = "gs://healthvision-ml-20250328-23525/models/iris-model.j48";
+            this.predictor = new Predictor(modelPath);
+            logger.info("Predictor initialized successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize predictor", e);
+        }
+    }
+    
+    @Override
+    public void service(HttpRequest request, HttpResponse response) throws IOException {
+        response.setContentType("application/json");
+        BufferedWriter writer = response.getWriter();
         
-        <!-- Google Cloud Storage -->
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-storage</artifactId>
-        </dependency>
+        try {
+            // Parse and validate request
+            JsonObject requestJson = gson.fromJson(request.getReader(), JsonObject.class);
+            validateRequest(requestJson);
+            
+            // Extract features
+            double sepalLength = requestJson.get("sepalLength").getAsDouble();
+            double sepalWidth = requestJson.get("sepalWidth").getAsDouble();
+            double petalLength = requestJson.get("petalLength").getAsDouble();
+            double petalWidth = requestJson.get("petalWidth").getAsDouble();
+            
+            // Make prediction
+            String prediction = predictor.predict(sepalLength, sepalWidth, petalLength, petalWidth);
+            
+            // Prepare response
+            JsonObject responseJson = new JsonObject();
+            responseJson.addProperty("prediction", prediction);
+            responseJson.addProperty("model", "iris-classifier");
+            responseJson.addProperty("version", "1.0");
+            
+            writer.write(gson.toJson(responseJson));
+            
+        } catch (JsonSyntaxException e) {
+            response.setStatusCode(400);
+            writer.write("{\"error\":\"Invalid JSON format\"}");
+        } catch (IllegalArgumentException e) {
+            response.setStatusCode(400);
+            writer.write("{\"error\":\"" + e.getMessage() + "\"}");
+        } catch (Exception e) {
+            logger.severe("Prediction error: " + e.getMessage());
+            response.setStatusCode(500);
+            writer.write("{\"error\":\"Internal server error\"}");
+        }
+    }
+    
+    private void validateRequest(JsonObject requestJson) {
+        if (!requestJson.has("sepalLength") || !requestJson.has("sepalWidth") || 
+            !requestJson.has("petalLength") || !requestJson.has("petalWidth")) {
+            throw new IllegalArgumentException("Missing required fields in request");
+        }
         
-        <!-- Cloud Functions -->
-        <dependency>
-            <groupId>com.google.cloud.functions</groupId>
-            <artifactId>functions-framework-api</artifactId>
-            <version>${functions.framework.version}</version>
-        </dependency>
-        
-        <!-- JUnit 5 -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.properties</include>
-                    <include>**/*.csv</include>
-                </includes>
-            </resource>
-            <!-- Include test datasets -->
-            <resource>
-                <directory>src/test/resources</directory>
-                <includes>
-                    <include>datasets/iris.csv</include>
-                </includes>
-            </resource>
-        </resources>
-
-        <plugins>
-            <!-- Java Compiler -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
-                </configuration>
-            </plugin>
-
-            <!-- Fat JAR Creation -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.healthvision.ml.PredictionFunction</mainClass>
-                                </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Ensure test classes are compiled -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
+        try {
+            requestJson.get("sepalLength").getAsDouble();
+            requestJson.get("sepalWidth").getAsDouble();
+            requestJson.get("petalLength").getAsDouble();
+            requestJson.get("petalWidth").getAsDouble();
+        } catch (ClassCastException | IllegalStateException e) {
+            throw new IllegalArgumentException("All features must be numeric values");
+        }
+    }
+}
