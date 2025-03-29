@@ -14,8 +14,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <google.cloud.storage.version>2.20.1</google.cloud.storage.version>
         <google.cloud.functions.version>1.1.0</google.cloud.functions.version>
         <gson.version>2.10.1</gson.version>
@@ -24,7 +24,7 @@
         <function.name>healthvision-predictor</function.name>
         <gcp.project.id>healthvision-ml-dev</gcp.project.id>
         <gcp.region>us-central1</gcp.region>
-        <function.runtime>java11</function.runtime>
+        <function.runtime>java17</function.runtime>
     </properties>
 
     <dependencies>
@@ -103,17 +103,14 @@
                 <version>0.11.0</version>
                 <configuration>
                     <functionTarget>com.healthvision.ml.PredictionFunction</functionTarget>
-                    <name>${function.name}</name>
-                    <projectId>${gcp.project.id}</projectId>
-                    <region>${gcp.region}</region>
-                    <entryPoint>com.healthvision.ml.PredictionFunction</entryPoint>
-                    <runtime>${function.runtime}</runtime>
+                    <port>8080</port>
                     <memory>512MB</memory>
-                    <timeout>300s</timeout>
+                    <timeout>540s</timeout>
                     <trigger-http>true</trigger-http>
                     <envVars>
                         <GCP_PROJECT>${gcp.project.id}</GCP_PROJECT>
                         <PORT>8080</PORT>
+                        <GOOGLE_FUNCTION_SOURCE>/</GOOGLE_FUNCTION_SOURCE>
                     </envVars>
                 </configuration>
             </plugin>

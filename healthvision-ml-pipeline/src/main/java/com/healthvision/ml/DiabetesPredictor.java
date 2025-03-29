@@ -20,10 +20,9 @@ public class DiabetesPredictor {
 
     public DiabetesPredictor() {
         try {
-            // Initialize GCS client with timeout
-            System.setProperty("sun.net.client.defaultConnectTimeout", "30000");
-            System.setProperty("sun.net.client.defaultReadTimeout", "30000");
+            logger.info("Initializing DiabetesPredictor...");
             
+            // Initialize GCS client
             Storage storage = StorageOptions.getDefaultInstance().getService();
             
             // Load model from GCS

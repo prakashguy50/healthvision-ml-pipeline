@@ -14,26 +14,27 @@ import java.util.logging.Logger;
 public class PredictionFunction implements HttpFunction {
     private static final Logger logger = Logger.getLogger(PredictionFunction.class.getName());
     private static final Gson gson = new Gson();
-    private final DiabetesPredictor predictor;
+    private static DiabetesPredictor predictor;
     
     static {
-        // Initialize port for Cloud Run
-        String port = System.getenv("PORT");
-        if (port == null) {
-            port = "8080";
-            System.setProperty("PORT", port);
-        }
-        logger.info("Initializing function on port: " + port);
-    }
-
-    public PredictionFunction() {
+        logger.info("Starting function initialization...");
         try {
-            logger.info("Initializing DiabetesPredictor...");
-            this.predictor = new DiabetesPredictor();
-            logger.info("DiabetesPredictor initialized successfully");
+            // Set default port for Cloud Run
+            String port = System.getenv("PORT");
+            if (port == null) {
+                port = "8080";
+                System.setProperty("PORT", port);
+            }
+            
+            // Initialize predictor with timeout settings
+            System.setProperty("sun.net.client.defaultConnectTimeout", "30000");
+            System.setProperty("sun.net.client.defaultReadTimeout", "30000");
+            
+            predictor = new DiabetesPredictor();
+            logger.info("Function initialized successfully on port: " + port);
         } catch (Exception e) {
-            logger.severe("Failed to initialize DiabetesPredictor: " + e.getMessage());
-            throw new RuntimeException("Failed to initialize DiabetesPredictor", e);
+            logger.severe("FATAL: Failed to initialize function: " + e.getMessage());
+            throw new RuntimeException("Initialization failed", e);
         }
     }
 
